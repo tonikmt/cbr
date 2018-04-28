@@ -1,0 +1,7 @@
+spring:
+  data:
+    mongodb:
+      database: currencys
+logging:
+    level:
+        ru.ivan.cbr: INFO
