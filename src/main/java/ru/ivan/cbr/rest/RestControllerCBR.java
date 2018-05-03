@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import ru.ivan.cbr.domain.Currencys;
+import ru.ivan.cbr.model.CurrencyDB;
 import ru.ivan.cbr.persistence.CurrencyDAO;
 
 /**
@@ -43,6 +44,10 @@ public class RestControllerCBR {
         String date = now.format(formatter);
         log.info("Ищем курсы в БД за текущую дату: " + date);
         Currencys currencys = currencyDAO.findByDate(date);
+        CurrencyDB currencys2 = currencyDAO.findByDateEndCode(date, 944);
+        if (currencys2!=null)
+            log.info("currencys2: " + currencys2.toString());
+        
         if (currencys != null) {
             log.info("В БД есть курсы да текущую дату " + date + " возвращаем курсы из БД.");
             log.info("Курсы из БД: " + currencys.toString());
@@ -90,12 +95,12 @@ public class RestControllerCBR {
             if (currencys == null) {
                 log.info("В БД нет записи с такой датой!");
                 log.info("Отправляем запрос в ЦБ с датой: " + datein);
-                Currencys c = restTemplate.getForObject("http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + datein.replace(".", "/"), Currencys.class);
-                log.info("Получили курсы валют: " + c.toString());
-                c.setRequestDate(datein);
-                currencyDAO.save(c);
+                currencys = restTemplate.getForObject("http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + datein.replace(".", "/"), Currencys.class);
+                log.info("Получили курсы валют: " + currencys.toString());
+                currencys.setRequestDate(datein);
+                currencyDAO.save(currencys);
                 log.info("Сохранили в БД и возвращаем в ответе на запрос!");
-                return new ResponseEntity<>(c, HttpStatus.OK);
+                return new ResponseEntity<>(currencys, HttpStatus.OK);
             } else {
                 log.info("Получили курсы валют из БД: " + currencys.toString());
                 return new ResponseEntity<>(currencys, HttpStatus.OK);

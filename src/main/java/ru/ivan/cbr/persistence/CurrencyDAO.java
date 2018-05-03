@@ -15,6 +15,7 @@ import org.springframework.data.mongodb.core.query.CriteriaDefinition;
 import static org.springframework.data.mongodb.core.query.Query.query;
 import org.springframework.stereotype.Component;
 import ru.ivan.cbr.domain.Currencys;
+import ru.ivan.cbr.model.CurrencyDB;
 import ru.ivan.cbr.model.CurrencysDB;
 import ru.ivan.cbr.utils.CurrencysForDB;
 
@@ -41,4 +42,13 @@ public class CurrencyDAO {
         mongoTemplate.save(cdb);
     }
     
+    public CurrencyDB findByDateEndCode (String date, Integer code) {
+        CurrencysDB currencysDB;
+        currencysDB = mongoTemplate.findOne(query(where("requestDate").is(date)), CurrencysDB.class);
+        for (CurrencyDB curr : currencysDB.getCurrencyList()) {
+            if (curr.getNumCode().equals(code)) 
+                return curr;
+        }
+        return null;
+    }
 }
