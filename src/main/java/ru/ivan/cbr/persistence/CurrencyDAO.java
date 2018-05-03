@@ -29,7 +29,7 @@ public class CurrencyDAO {
     private MongoTemplate mongoTemplate;
     
     public Currencys findByDate (String date) {
-        CurrencysDB currencysDB = mongoTemplate.findOne(query(where("date").is(date)), CurrencysDB.class);
+        CurrencysDB currencysDB = mongoTemplate.findOne(query(where("requestDate").is(date)), CurrencysDB.class);
         if (currencysDB == null)
             return null;
         else

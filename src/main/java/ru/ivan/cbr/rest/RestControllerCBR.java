@@ -37,35 +37,62 @@ public class RestControllerCBR {
 
     @RequestMapping(value = "", method = RequestMethod.GET, produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<Currencys> getAllCurrencys() {
-        Currencys c = restTemplate.getForObject("http://www.cbr.ru/scripts/XML_daily.asp", Currencys.class);
-        log.info("Currencys for http://www.cbr.ru/scripts/XML_daily.asp: " + c.toString());
-        if (currencyDAO.findByDate(c.getDate()) == null) {
-            log.info("Таких курсов нет в БД, пишем их в БД!");
-            currencyDAO.save(c);
+        log.info("Получен запрос без даты.");
+        LocalDate now = LocalDate.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        String date = now.format(formatter);
+        log.info("Ищем курсы в БД за текущую дату: " + date);
+        Currencys currencys = currencyDAO.findByDate(date);
+        if (currencys != null) {
+            log.info("В БД есть курсы да текущую дату " + date + " возвращаем курсы из БД.");
+            log.info("Курсы из БД: " + currencys.toString());
+            return new ResponseEntity<>(currencys, HttpStatus.OK);
+
+        } else {
+            log.info("В БД нет курсов за текущую дату: " + date);
+            log.info("Берем курсы с сайта ЦБ.");
+            currencys = restTemplate.getForObject("http://www.cbr.ru/scripts/XML_daily.asp", Currencys.class);
+            log.info("Получили курсы с ЦБ: " + currencys.toString());
+            log.info("Пишем их в БД и выдаем в ответе.");
+            currencys.setRequestDate(date);
+            currencyDAO.save(currencys);
+            return new ResponseEntity<>(currencys, HttpStatus.OK);
         }
-        return new ResponseEntity<>(c, HttpStatus.OK);
     }
 
     @RequestMapping(value = "{date}", method = RequestMethod.GET, produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<Currencys> getCurrencysByDate(@PathVariable("date") String datein) {
 
         if (datein == null || datein.equals("") || !datein.matches("\\d{2}.\\d{2}.\\d{4}")) {
-            
-            Currencys c = restTemplate.getForObject("http://www.cbr.ru/scripts/XML_daily.asp", Currencys.class);
-            log.info("Currencys for http://www.cbr.ru/scripts/XML_daily.asp: " + c.toString());
-            if (currencyDAO.findByDate(c.getDate()) == null) {
-                log.info("Таких курсов нет в БД, пишем их в БД!");
-                currencyDAO.save(c);
+            log.info("Получен запрос с некорректной датой.");
+            LocalDate now = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+            String date = now.format(formatter);
+            log.info("Ищем курсы в БД за текущую дату: " + date);
+            Currencys currencys = currencyDAO.findByDate(date);
+            if (currencys != null) {
+                log.info("В БД есть курсы да текущую дату " + date + " возвращаем курсы из БД.");
+                log.info("Курсы из БД: " + currencys.toString());
+                return new ResponseEntity<>(currencys, HttpStatus.OK);
+            } else {
+                log.info("В БД нет курсов за текущую дату: " + date);
+                log.info("Берем курсы с сайта ЦБ.");
+                currencys = restTemplate.getForObject("http://www.cbr.ru/scripts/XML_daily.asp", Currencys.class);
+                log.info("Получили курсы с ЦБ: " + currencys.toString());
+                log.info("Пишем их в БД и выдаем в ответе.");
+                currencys.setRequestDate(date);
+                currencyDAO.save(currencys);
+                return new ResponseEntity<>(currencys, HttpStatus.OK);
             }
-            return new ResponseEntity<>(c, HttpStatus.OK);
         } else {
-            log.info("Получена дата: " + datein);
+            log.info("Получен запрос с дата: " + datein);
             Currencys currencys = currencyDAO.findByDate(datein);
             if (currencys == null) {
                 log.info("В БД нет записи с такой датой!");
-                log.info("Отправляем запрос в ЦБ с датой: "+ datein);
+                log.info("Отправляем запрос в ЦБ с датой: " + datein);
                 Currencys c = restTemplate.getForObject("http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + datein.replace(".", "/"), Currencys.class);
                 log.info("Получили курсы валют: " + c.toString());
+                c.setRequestDate(datein);
                 currencyDAO.save(c);
                 log.info("Сохранили в БД и возвращаем в ответе на запрос!");
                 return new ResponseEntity<>(c, HttpStatus.OK);

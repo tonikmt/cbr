@@ -29,6 +29,9 @@ public class Currencys {
     @XmlAttribute (name = "Date", required = true)
     private String date;
     
+    @XmlAttribute (name = "RequestDate")
+    private String requestDate;
+    
     @XmlAttribute (name = "name", required = true)
     private String name;
     

@@ -30,7 +30,7 @@ public class CurrencysDB implements Serializable{
     private ObjectId id;
     
     private String date;
+    private String requestDate;
     private String name;
-    
     private List<CurrencyDB> currencyList;
 }

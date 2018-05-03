@@ -24,6 +24,7 @@ public class CurrencysForDB {
     public static CurrencysDB forDB (Currencys currencys) {
         CurrencysDB cdb = new CurrencysDB();
         cdb.setDate(currencys.getDate());
+        cdb.setRequestDate(currencys.getRequestDate());
         cdb.setId(new ObjectId());
         cdb.setName(currencys.getName());
         List <CurrencyDB> curDBList = new ArrayList<>();
@@ -45,6 +46,7 @@ public class CurrencysForDB {
     public static Currencys currDBForCurr (CurrencysDB currencysDB) {
         Currencys currencys = new Currencys();
         currencys.setDate(currencysDB.getDate());
+        currencys.setRequestDate(currencysDB.getRequestDate());
         currencys.setName(currencysDB.getName());
         List <Currency> list = new ArrayList<>();
         currencysDB.getCurrencyList().stream().map((currensyyy) -> {
