@@ -7,6 +7,8 @@ package ru.ivan.cbr.persistence;
 
 import com.mongodb.BasicDBObject;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -25,29 +27,34 @@ import ru.ivan.cbr.utils.CurrencysForDB;
  */
 @Component
 public class CurrencyDAO {
-    
+
     @Autowired
     private MongoTemplate mongoTemplate;
-    
-    public Currencys findByDate (String date) {
+
+    public Currencys findByDate(String date) {
         CurrencysDB currencysDB = mongoTemplate.findOne(query(where("requestDate").is(date)), CurrencysDB.class);
-        if (currencysDB == null)
+        if (currencysDB == null) {
             return null;
-        else
+        } else {
             return CurrencysForDB.currDBForCurr(currencysDB);
+        }
     }
-    
-    public void save (@NonNull Currencys currencys) {
+
+    public void save(@NonNull Currencys currencys) {
         CurrencysDB cdb = CurrencysForDB.forDB(currencys);
         mongoTemplate.save(cdb);
     }
-    
-    public CurrencyDB findByDateEndCode (String date, Integer code) {
-        CurrencysDB currencysDB;
-        currencysDB = mongoTemplate.findOne(query(where("requestDate").is(date)), CurrencysDB.class);
-        for (CurrencyDB curr : currencysDB.getCurrencyList()) {
-            if (curr.getNumCode().equals(code)) 
-                return curr;
+
+    public Currencys findByDateEndCode(String date, Integer code) {
+        CurrencysDB currencysDB = mongoTemplate.findOne(query(where("requestDate").is(date)), CurrencysDB.class);
+        if (currencysDB != null) {
+            for (CurrencyDB curr : currencysDB.getCurrencyList()) {
+                if (curr.getNumCode().equals(code)) {
+                    currencysDB.getCurrencyList().clear();
+                    currencysDB.getCurrencyList().add(curr);
+                    return CurrencysForDB.currDBForCurr(currencysDB);
+                }
+            }
         }
         return null;
     }

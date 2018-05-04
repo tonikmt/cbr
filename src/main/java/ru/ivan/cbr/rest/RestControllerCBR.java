@@ -16,8 +16,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import ru.ivan.cbr.domain.Currency;
 import ru.ivan.cbr.domain.Currencys;
 import ru.ivan.cbr.model.CurrencyDB;
 import ru.ivan.cbr.persistence.CurrencyDAO;
@@ -44,9 +46,6 @@ public class RestControllerCBR {
         String date = now.format(formatter);
         log.info("Ищем курсы в БД за текущую дату: " + date);
         Currencys currencys = currencyDAO.findByDate(date);
-        CurrencyDB currencys2 = currencyDAO.findByDateEndCode(date, 944);
-        if (currencys2!=null)
-            log.info("currencys2: " + currencys2.toString());
         
         if (currencys != null) {
             log.info("В БД есть курсы да текущую дату " + date + " возвращаем курсы из БД.");
@@ -63,6 +62,33 @@ public class RestControllerCBR {
             currencyDAO.save(currencys);
             return new ResponseEntity<>(currencys, HttpStatus.OK);
         }
+    }
+    
+    @RequestMapping (value = "/", method = RequestMethod.GET, produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<Currencys> getCurrencysByDateAndCode (@RequestParam (value = "date", required = true) String date, 
+                                                                @RequestParam (value = "num", required = true) Integer num) {
+        if (date!=null && !date.equals("") && date.matches("\\d{2}.\\d{2}.\\d{4}") && num!=null && String.valueOf(num.intValue()).length() == 3) {
+            log.info("Запрос с датой: " + date);
+            log.info("Запрос с кодом валюты: " + num);
+            Currencys currencys = currencyDAO.findByDateEndCode(date, num);
+            if (currencys != null) {
+                return new ResponseEntity<>(currencys, HttpStatus.OK);
+            } else {
+                currencys = restTemplate.getForObject("http://www.cbr.ru/scripts/XML_daily.asp?date_req=" + date.replace(".", "/"), Currencys.class);
+                log.info("В БД нет курсов за указанную дату. Получили курсы валют из ЦБ: " + currencys.toString());
+                currencys.setRequestDate(date);
+                currencyDAO.save(currencys);
+                log.info("Сохранили в БД и возвращаем в ответе на запрос!");
+                for (Currency c : currencys.getCurrencys()) {
+                    if (c.getNumCode() == num.intValue()) {
+                        currencys.getCurrencys().clear();
+                        currencys.getCurrencys().add(c);
+                        return new ResponseEntity<>(currencys, HttpStatus.OK);
+                    }
+                }
+            }
+        }
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
     }
 
     @RequestMapping(value = "{date}", method = RequestMethod.GET, produces = MediaType.APPLICATION_XML_VALUE)
