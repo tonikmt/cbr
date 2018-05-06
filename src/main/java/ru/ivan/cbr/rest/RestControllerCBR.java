@@ -5,7 +5,6 @@
  */
 package ru.ivan.cbr.rest;
 
-import java.awt.PageAttributes;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import ru.ivan.cbr.domain.Currency;
 import ru.ivan.cbr.domain.Currencys;
-import ru.ivan.cbr.model.CurrencyDB;
 import ru.ivan.cbr.persistence.CurrencyDAO;
 
 /**
@@ -80,7 +78,7 @@ public class RestControllerCBR {
                 currencyDAO.save(currencys);
                 log.info("Сохранили в БД и возвращаем в ответе на запрос!");
                 for (Currency c : currencys.getCurrencys()) {
-                    if (c.getNumCode() == num.intValue()) {
+                    if (c.getNumCode() == num) {
                         currencys.getCurrencys().clear();
                         currencys.getCurrencys().add(c);
                         return new ResponseEntity<>(currencys, HttpStatus.OK);
